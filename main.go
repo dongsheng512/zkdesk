@@ -41,7 +41,7 @@ func main() {
 
 	app := application.New(application.Options{
 		Name:        "ZKDesk",
-		Description: "ZKTeco 考勤机人员同步、人脸管理与考勤拉取客户端 (macOS)",
+		Description: "ZKTeco 考勤机人员同步、人脸管理与考勤拉取客户端",
 		Services: []application.Service{
 			application.NewService(zkSvc),
 		},

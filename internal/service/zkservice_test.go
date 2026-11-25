@@ -170,6 +170,11 @@ func TestOpenDirectoryGuardsAndURLEncoding(t *testing.T) {
 	if got != want {
 		t.Fatalf("fileDirURL = %q, want %q", got, want)
 	}
+	gotWin := fileDirURL("C:/Users/test/AppData/Roaming/zk_mac")
+	wantWin := "file:///C:/Users/test/AppData/Roaming/zk_mac"
+	if gotWin != wantWin {
+		t.Fatalf("fileDirURL(win) = %q, want %q", gotWin, wantWin)
+	}
 }
 
 func TestFaceGalleryIsLazyAndLoadsOnDemand(t *testing.T) {

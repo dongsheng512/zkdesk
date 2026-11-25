@@ -203,9 +203,25 @@ func decodeZKStr(s string) string {
 	return string(out)
 }
 
+var (
+	procGetACP = syscall.NewLazyDLL("kernel32.dll").NewProc("GetACP")
+	systemACP  = detectSystemACP()
+)
+
+func detectSystemACP() uint32 {
+	r, _, _ := procGetACP.Call()
+	return uint32(r)
+}
+
 func encodeZKStr(s string) string {
 	if s == "" {
 		return ""
+	}
+	// On Simplified Chinese Windows (CP936 / GB18030), zkemkeeper.dll's ANSI BSTR
+	// conversion already encodes standard Unicode strings directly into GBK bytes.
+	// Only remap GB18030 -> CP1252 runes when running under a Western ANSI codepage (e.g. Wine).
+	if systemACP == 936 || systemACP == 54936 {
+		return s
 	}
 	gbkBytes, err := simplifiedchinese.GB18030.NewEncoder().Bytes([]byte(s))
 	if err != nil {
@@ -226,7 +242,7 @@ func unixToWinePath(p string) string {
 	if p == "" {
 		return ""
 	}
-	if len(p) >= 2 && p[1] == ':' {
+	if (len(p) >= 2 && p[1] == ':') || strings.HasPrefix(p, `\\`) {
 		return p
 	}
 	return "Z:" + strings.ReplaceAll(p, "/", `\`)
@@ -313,7 +329,7 @@ type zkHandle struct {
 func newZKHandle() (*zkHandle, error) {
 	unk, err := oleutil.CreateObject("zkemkeeper.ZKEM.1")
 	if err != nil {
-		return nil, fmt.Errorf("CreateObject(zkemkeeper.ZKEM.1): %w", err)
+		return nil, fmt.Errorf("未检测到已注册的 64 位 zkemkeeper.dll（Windows 请右键以管理员身份运行「register-sdk-admin.bat」完成一次性注册；底层错误: %w）", err)
 	}
 	disp, err := unk.QueryInterface(ole.IID_IDispatch)
 	if err != nil {

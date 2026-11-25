@@ -7,11 +7,11 @@
 		"0409": {
 			"FileVersion": "0.1.0",
 			"ProductVersion": "0.1.0",
-			"CompanyName": "Dongsheng Tools",
+			"CompanyName": "ZKDesk",
 			"FileDescription": "ZKTeco 考勤机人员同步、人脸管理与考勤拉取客户端",
 			"LegalCopyright": "(c) 2026",
-			"ProductName": "ZK 考勤管理",
-			"Comments": "macOS native attendance terminal manager via Wine x64 SDK"
+			"ProductName": "ZKDesk",
+			"Comments": "Cross-platform ZKTeco attendance terminal manager"
 		}
 	}
 }

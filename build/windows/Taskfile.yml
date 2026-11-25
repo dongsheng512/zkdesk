@@ -48,9 +48,10 @@ tasks:
       - sh: '{{if eq .OBFUSCATED "true"}}command -v garble >/dev/null 2>&1{{else}}true{{end}}'
         msg: "garble is required for obfuscated builds. Install it with: go install mvdan.cc/garble@v0.16.0 (requires Go 1.24+). See https://github.com/burrowers/garble/releases for version/toolchain compatibility."
     cmds:
+      - GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -buildvcs=false -ldflags="-w -s" -o runtime/zk_worker.exe ./cmd/zk-worker
       - task: generate:syso
         vars:
-          ARCH: '{{.ARCH}}'
+          ARCH: '{{.ARCH | default "amd64"}}'
       - '{{if eq .OBFUSCATED "true"}}garble {{.GARBLE_ARGS}} build{{else}}go build{{end}} {{.BUILD_FLAGS}} -o "{{.BIN_DIR}}/{{.APP_NAME}}.exe"'
       - cmd: powershell Remove-item *.syso
         platforms: [windows]
@@ -61,7 +62,7 @@ tasks:
     env:
       GOOS: windows
       CGO_ENABLED: '{{.CGO_ENABLED | default "0"}}'
-      GOARCH: '{{.ARCH | default ARCH}}'
+      GOARCH: '{{.ARCH | default "amd64"}}'
 
   build:docker:
     summary: Cross-compiles for Windows using Docker with Zig (for CGO builds on non-Windows)
@@ -103,6 +104,60 @@ tasks:
     vars:
       FORMAT: '{{.FORMAT | default "nsis"}}'
       INSTALL_SCOPE: '{{.INSTALL_SCOPE | default "machine"}}'
+
+  package:portable:
+    summary: Cross-builds a portable Windows x64 zip bundle with native zk_worker.exe + 64-bit SDK
+    deps:
+      - task: build
+        vars:
+          ARCH: amd64
+    cmds:
+      - rm -rf "{{.BIN_DIR}}/{{.APP_NAME}}-windows-amd64" "{{.BIN_DIR}}/{{.APP_NAME}}-windows-amd64.zip"
+      - mkdir -p "{{.BIN_DIR}}/{{.APP_NAME}}-windows-amd64/runtime/sdk_x64"
+      - cp "{{.BIN_DIR}}/{{.APP_NAME}}.exe" "{{.BIN_DIR}}/{{.APP_NAME}}-windows-amd64/"
+      - cp runtime/zk_worker.exe "{{.BIN_DIR}}/{{.APP_NAME}}-windows-amd64/runtime/"
+      - cp runtime/sdk_x64/*.dll "{{.BIN_DIR}}/{{.APP_NAME}}-windows-amd64/runtime/sdk_x64/"
+      - cp runtime/sdk_x64/README.md "{{.BIN_DIR}}/{{.APP_NAME}}-windows-amd64/runtime/sdk_x64/"
+      - |
+        python3 - <<'PY'
+        from pathlib import Path
+        out = Path("bin/ZKDesk-windows-amd64")
+        bat = (
+            "@echo off\r\n"
+            "chcp 65001 >nul\r\n"
+            "title ZKDesk - Register 64-bit ZKTeco SDK\r\n"
+            "echo Registering 64-bit zkemkeeper.dll ...\r\n"
+            r'set "DLL=%~dp0runtime\sdk_x64\zkemkeeper.dll"' + "\r\n"
+            'if not exist "%DLL%" (\r\n'
+            "  echo [ERROR] Not found: %DLL%\r\n"
+            "  pause\r\n"
+            "  exit /b 1\r\n"
+            ")\r\n"
+            r'set "PATH=%~dp0runtime\sdk_x64;%PATH%"' + "\r\n"
+            r'"%SystemRoot%\System32\regsvr32.exe" "%DLL%"' + "\r\n"
+            "if %errorlevel% equ 0 (\r\n"
+            "  echo.\r\n"
+            "  echo [OK] 64-bit zkemkeeper.dll registered! You can now launch ZKDesk.exe.\r\n"
+            ") else (\r\n"
+            "  echo.\r\n"
+            "  echo [FAILED] Please right-click this script and choose 'Run as administrator'.\r\n"
+            ")\r\n"
+            "pause\r\n"
+        )
+        (out / "register-sdk-admin.bat").write_bytes(bat.encode("utf-8"))
+        readme = (
+            "ZKDesk Windows 64-bit Native Edition\r\n"
+            "====================================\r\n"
+            "1. Extract the entire folder to a permanent location (keep the runtime folder next to ZKDesk.exe).\r\n"
+            "2. Before first use, right-click 'register-sdk-admin.bat' and choose 'Run as administrator'\r\n"
+            "   to perform one-time 64-bit zkemkeeper.dll COM registration.\r\n"
+            "   (Alternatively, right-click ZKDesk.exe and Run as administrator once.)\r\n"
+            "3. Afterwards, double-click ZKDesk.exe directly (native 64-bit, no Wine required).\r\n"
+            r"4. Local data directory: %AppData%\zk_mac" + "\r\n"
+        )
+        (out / "README-Windows.txt").write_bytes(readme.encode("utf-8"))
+        PY
+      - (cd "{{.BIN_DIR}}" && zip -rq "{{.APP_NAME}}-windows-amd64.zip" "{{.APP_NAME}}-windows-amd64")
 
   generate:syso:
     summary: Generates Windows `.syso` file

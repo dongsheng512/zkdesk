@@ -677,7 +677,11 @@ func (s *ZKService) ClearOperationLogs() error {
 }
 
 func fileDirURL(dir string) string {
-	return (&url.URL{Scheme: "file", Path: filepath.ToSlash(dir)}).String()
+	p := filepath.ToSlash(dir)
+	if !strings.HasPrefix(p, "/") {
+		p = "/" + p
+	}
+	return (&url.URL{Scheme: "file", Path: p}).String()
 }
 
 func (s *ZKService) OpenBackupsDirectory() error {

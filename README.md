@@ -1,8 +1,9 @@
 # ZKDesk
 
-基于 **Go + Wails v3 + React (TypeScript)** 构建的 macOS 原生中控（ZKTeco）考勤机桌面管理工具。
+基于 **Go + Wails v3 + React (TypeScript)** 构建的跨平台（**macOS & Windows 64 位**）中控（ZKTeco）考勤机桌面管理工具。
 
-通过内置 **Wine 11 (Rosetta 2) + 纯 Go 交叉编译 64 位 Windows COM Worker (`cmd/zk-worker` → `zk_worker.exe`) + 中控官方 64 位 SDK (`zkemkeeper.dll`)**，无需 Windows 虚拟机或 Python 运行时，即可在 macOS 上直连中控新旧固件考勤机（含 2024/2025 新固件加密通讯与 `WithMask` 考勤协议）。
+- **Windows 64 位原生版**：直接原生运行纯 Go 64 位 COM Worker (`zk_worker.exe`) 调用中控官方 64 位 SDK (`zkemkeeper.dll`)，**无需 Wine、无需虚拟机、解压仅 ~15 MB**。
+- **macOS 原生版**：通过内置精简 **Wine 11 (Rosetta 2) + 纯 Go 64 位 Worker + 中控官方 64 位 SDK**，无需 Windows 虚拟机或 Python 运行时，即可在 macOS 上直连中控新旧固件考勤机（含 2024/2025 新固件加密通讯与 `WithMask` 考勤协议）。
 
 ## 核心功能
 
@@ -23,8 +24,16 @@
 
 ## 直接安装（推荐普通用户）
 
-1. 前往本仓库 [Releases](https://github.com/dongsheng512/zkdesk/releases) 下载：
-   - **独立开箱版（推荐）**：`ZKDesk-*-macos-arm64-standalone.zip`（约 85 MB，已内置精简 Wine 11 + 中控 64 位 SDK，**无需额外安装 Wine**；Apple Silicon 需已安装 Rosetta 2）。
+前往本仓库 [Releases](https://github.com/dongsheng512/zkdesk/releases) 按系统选择下载：
+
+### Windows（64 位原生版，无需 Wine）
+1. 下载 `ZKDesk-*-windows-amd64.zip`（约 11 MB）并解压到固定目录。
+2. 首次使用前，右键目录中的 `register-sdk-admin.bat` 选择 **「以管理员身份运行」** 完成 64 位 `zkemkeeper.dll` 一次性注册（需 Win10/11 64 位，内置 Edge WebView2）。
+3. 之后直接双击 `ZKDesk.exe` 即可使用。
+
+### macOS（Apple Silicon）
+1. 下载对应版本：
+   - **独立开箱版（推荐）**：`ZKDesk-*-macos-arm64-standalone.zip`（约 88 MB，已内置精简 Wine 11 + 中控 64 位 SDK，**无需额外安装 Wine**；需已安装 Rosetta 2）。
    - **轻量版**：`ZKDesk-*-macos-arm64.zip`（约 14 MB，适合本机已安装 `Wine Stable.app` 的用户）。
 2. 解压后将 `ZKDesk.app` 拖入「应用程序」文件夹。
 3. 因安装包使用本地 ad-hoc 签名，首次打开如遇 macOS 提示“无法验证开发者”，请在终端执行一次放行命令后再打开：
@@ -34,9 +43,9 @@
 
 ## 从源码构建前提
 
-- macOS 12+（Apple Silicon 需已安装 Rosetta 2）
-- 已安装并放行 **Wine Stable**（`/Applications/Wine Stable.app` 或 `/opt/homebrew/bin/wine`）
+- macOS 12+ 或 Windows 10/11 64 位
 - Go 1.24+、Node.js 20+、[Wails v3 CLI](https://v3alpha.wails.io/)
+- 打包 macOS 版时需本机已安装 `Wine Stable.app`；打包 Windows 64 位便携版可在 macOS 上直接交叉编译，无需 Windows 机器或 Docker
 - 中控 64 位 SDK DLL 已预置于 [runtime/sdk_x64/](runtime/sdk_x64/README.md)，克隆后可直接构建打包
 
 ## 开发、测试与打包
@@ -45,18 +54,20 @@
 # 运行全部后端单元测试（含竞态检测）
 go test -race -v ./internal/...
 
-# 校验 Windows 64 位 Worker 交叉编译
-GOOS=windows GOARCH=amd64 go vet ./cmd/zk-worker/...
+# 校验 Windows 64 位主程序与 Worker 交叉编译
+GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go vet ./... ./cmd/zk-worker/...
 
 # 开发模式启动（热重载）
 wails3 dev -config ./build/config.yml
 
-# 打包轻量版 macOS .app（依赖本机已安装的 Wine）
+# 打包 macOS 独立开箱版（内置精简 Wine 11 + 64 位 SDK）
+wails3 task package:standalone
+
+# 打包 macOS 轻量版（依赖本机已安装的 Wine）
 wails3 task package
 
-# 打包独立开箱版 macOS .app（自动内嵌精简 Wine 11 + 64 位 SDK）
-wails3 task package:standalone
-open bin/ZKDesk.app
+# 交叉编译打包 Windows 64 位原生便携版（无需 Wine）
+wails3 task package:windows
 ```
 
 首次启动时，应用会自动在 `~/Library/Application Support/zk_mac/wine64` 初始化独立 Wine 环境并静默注册 64 位 `zkemkeeper.dll`（约需 10 秒，之后常驻复用）。

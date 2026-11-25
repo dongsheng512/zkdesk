@@ -34,6 +34,11 @@ tasks:
     cmds:
       - task: darwin:package:standalone
 
+  package:windows:
+    summary: Cross-builds a portable Windows x64 zip bundle (no Wine required)
+    cmds:
+      - task: windows:package:portable
+
   run:
     summary: Runs the application
     cmds:

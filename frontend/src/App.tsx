@@ -292,7 +292,7 @@ export default function App() {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="runtime-pill" title={runtime?.error || runtime?.winePath || '正在检测 Wine 引擎'}>
+          <div className="runtime-pill" title={runtime?.error || runtime?.winePath || '正在检测 64 位 SDK 引擎'}>
             <span
               className={`status-dot ${
                 runtime === null ? 'idle' : runtime.ready ? 'ok' : 'err'

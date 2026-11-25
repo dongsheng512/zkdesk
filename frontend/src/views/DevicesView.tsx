@@ -331,7 +331,7 @@ export function DevicesView({
             type="button"
             className="btn btn-ghost btn-sm"
             disabled={busy}
-            title="检查 Wine 64 位 SDK 引擎状态"
+            title="检查 64 位 SDK 引擎状态"
             onClick={onRefreshRuntime}
           >
             <Cpu size={14} />
@@ -349,7 +349,7 @@ export function DevicesView({
 
       {runtime && !runtime.ready && (
         <div className="notice-bar error">
-          <span>Wine 64 位 SDK 引擎尚未就绪：{runtime.error || '请确认已安装并放行 Wine Stable.app'}</span>
+          <span>64 位 SDK 引擎尚未就绪：{runtime.error || '请检查运行环境配置'}</span>
           <button type="button" className="btn btn-sm" onClick={onRefreshRuntime}>
             重试检查
           </button>
