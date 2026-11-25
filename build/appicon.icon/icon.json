@@ -1,0 +1,32 @@
+{
+  "fill" : {
+    "linear-gradient" : [
+      "srgb:0.14500,0.48600,0.94500,1.00000",
+      "srgb:0.07500,0.23500,0.62000,1.00000"
+    ]
+  },
+  "groups" : [
+    {
+      "layers" : [
+        {
+          "image-name" : "zkdesk_icon.png",
+          "name" : "zkdesk_icon",
+          "position" : {
+            "scale" : 1.0,
+            "translation-in-points" : [
+              0.0,
+              0.0
+            ]
+          }
+        }
+      ],
+      "specular" : false
+    }
+  ],
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
+  }
+}

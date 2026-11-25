@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=ZK 考勤管理
+Comment=ZKTeco 考勤机人员同步、人脸管理与考勤拉取客户端
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/zk-mac %u
+Terminal=false
+Type=Application
+Icon=zk-mac
+Categories=Utility;
+StartupWMClass=zk-mac
+
+ 

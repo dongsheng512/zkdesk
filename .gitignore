@@ -1,0 +1,11 @@
+.DS_Store
+.task
+.wails
+bin/
+frontend/dist/
+frontend/node_modules/
+runtime/zk_worker.exe
+runtime/sdk_x64/*.dll
+runtime/sdk_x64/*.DLL
+*.log
+*.bak
