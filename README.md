@@ -23,9 +23,11 @@
 
 ## 直接安装（推荐普通用户）
 
-1. 前往本仓库 [Releases](https://github.com/dongsheng512/zkdesk/releases) 下载最新 `ZKDesk-*-macos-*.zip` 并解压，将 `ZKDesk.app` 拖入「应用程序」文件夹。
-2. 安装并首次放行 **Wine Stable**（`/Applications/Wine Stable.app` 或 `brew install --cask --no-quarantine wine-stable`；Apple Silicon 需已安装 Rosetta 2）。
-3. 因安装包使用本地 ad-hoc 签名，首次打开如遇 macOS 提示“无法验证开发者”，可执行一次放行命令后再打开：
+1. 前往本仓库 [Releases](https://github.com/dongsheng512/zkdesk/releases) 下载：
+   - **独立开箱版（推荐）**：`ZKDesk-*-macos-arm64-standalone.zip`（约 85 MB，已内置精简 Wine 11 + 中控 64 位 SDK，**无需额外安装 Wine**；Apple Silicon 需已安装 Rosetta 2）。
+   - **轻量版**：`ZKDesk-*-macos-arm64.zip`（约 14 MB，适合本机已安装 `Wine Stable.app` 的用户）。
+2. 解压后将 `ZKDesk.app` 拖入「应用程序」文件夹。
+3. 因安装包使用本地 ad-hoc 签名，首次打开如遇 macOS 提示“无法验证开发者”，请在终端执行一次放行命令后再打开：
    ```bash
    xattr -dr com.apple.quarantine /Applications/ZKDesk.app
    ```
@@ -49,8 +51,11 @@ GOOS=windows GOARCH=amd64 go vet ./cmd/zk-worker/...
 # 开发模式启动（热重载）
 wails3 dev -config ./build/config.yml
 
-# 生产构建并打包签名 macOS .app（自动编译 zk_worker.exe 与前端）
+# 打包轻量版 macOS .app（依赖本机已安装的 Wine）
 wails3 task package
+
+# 打包独立开箱版 macOS .app（自动内嵌精简 Wine 11 + 64 位 SDK）
+wails3 task package:standalone
 open bin/ZKDesk.app
 ```
 

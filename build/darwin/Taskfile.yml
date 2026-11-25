@@ -125,6 +125,46 @@ tasks:
     cmds:
       - task: create:app:bundle
 
+  package:standalone:
+    summary: Packages a self-contained `.app` bundle with trimmed Wine 11 + 64-bit SDK
+    deps:
+      - task: build
+    vars:
+      WINE_SOURCE: '{{.WINE_SOURCE | default "/Applications/Wine Stable.app/Contents/Resources/wine"}}'
+    preconditions:
+      - sh: test -x "{{.WINE_SOURCE}}/bin/wine"
+        msg: "Wine Stable not found at '{{.WINE_SOURCE}}'. Install Wine Stable or pass WINE_SOURCE=/path/to/wine."
+    cmds:
+      - task: create:app:bundle:standalone
+        vars:
+          WINE_SOURCE: '{{.WINE_SOURCE}}'
+
+  create:app:bundle:standalone:
+    summary: Creates a self-contained `.app` bundle including trimmed 64-bit Wine
+    internal: true
+    cmds:
+      - test -n "{{.BIN_DIR}}" && test -n "{{.APP_NAME}}" && rm -rf -- "{{.BIN_DIR}}/{{.APP_NAME}}.app"
+      - mkdir -p "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/MacOS"
+      - mkdir -p "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/Resources"
+      - cp build/darwin/icons.icns "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/Resources"
+      - |
+        if [ -f build/darwin/Assets.car ]; then
+          cp build/darwin/Assets.car "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/Resources"
+        fi
+      - cp "{{.BIN_DIR}}/{{.APP_NAME}}" "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/MacOS"
+      - cp build/darwin/Info.plist "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents"
+      - cp -R runtime "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/Resources/runtime"
+      - mkdir -p "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/Resources/runtime/wine"
+      - rsync -a --exclude='share/wine/gecko' --exclude='share/wine/mono' --exclude='lib/wine/i386-windows' "{{.WINE_SOURCE}}/" "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/Resources/runtime/wine/"
+      - |
+        cat <<'EOF' > "{{.BIN_DIR}}/{{.APP_NAME}}.app/Contents/Resources/runtime/wine/LGPL-2.1-NOTICE.txt"
+        This bundle includes unmodified Wine runtime binaries redistributed under the
+        GNU Lesser General Public License v2.1 (LGPL-2.1).
+        Upstream Wine source code: https://www.winehq.org/
+        macOS Wine builds: https://github.com/Gcenx/macOS_Wine_builds
+        EOF
+      - task: '{{if eq OS "darwin"}}codesign:adhoc{{else}}codesign:skip{{end}}'
+
   package:universal:
     summary: Packages darwin universal binary (arm64 + amd64)
     deps:

@@ -29,6 +29,11 @@ tasks:
     cmds:
       - task: "{{.GOOS}}:package"
 
+  package:standalone:
+    summary: Packages a self-contained macOS .app with bundled Wine 11 + 64-bit SDK
+    cmds:
+      - task: darwin:package:standalone
+
   run:
     summary: Runs the application
     cmds:

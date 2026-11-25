@@ -56,11 +56,12 @@ type Manager struct {
 }
 
 func NewManager(dataDir string) *Manager {
+	runtimeDir := locateRuntimeDir()
 	return &Manager{
 		dataDir:    dataDir,
-		runtimeDir: locateRuntimeDir(),
+		runtimeDir: runtimeDir,
 		winePrefix: filepath.Join(dataDir, "wine64"),
-		wineBin:    locateWineBinary(),
+		wineBin:    locateWineBinary(runtimeDir),
 	}
 }
 
@@ -72,15 +73,36 @@ func (m *Manager) SetOnReset(fn func()) {
 	m.onReset = fn
 }
 
-func locateWineBinary() string {
-	candidates := []string{
-		"/opt/homebrew/bin/wine",
-		"/Applications/Wine Stable.app/Contents/Resources/wine/bin/wine",
-		"/usr/local/bin/wine",
+func locateWineBinary(runtimeDir string) string {
+	if env := strings.TrimSpace(os.Getenv("ZK_MAC_WINE_BIN")); env != "" {
+		if fi, err := os.Stat(env); err == nil && !fi.IsDir() {
+			return env
+		}
 	}
+
+	var candidates []string
+	// 1. Prefer bundled standalone Wine inside app runtime/wine
+	if runtimeDir != "" {
+		candidates = append(candidates, filepath.Join(runtimeDir, "wine", "bin", "wine"))
+	}
+	if exe, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exe)
+		candidates = append(candidates,
+			filepath.Join(exeDir, "..", "Resources", "runtime", "wine", "bin", "wine"),
+			filepath.Join(exeDir, "runtime", "wine", "bin", "wine"),
+		)
+	}
+	// 2. Fall back to system-installed Wine Stable / Homebrew Wine
+	candidates = append(candidates,
+		"/Applications/Wine Stable.app/Contents/Resources/wine/bin/wine",
+		"/opt/homebrew/bin/wine",
+		"/usr/local/bin/wine",
+	)
 	for _, p := range candidates {
-		if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
-			return p
+		if abs, err := filepath.Abs(p); err == nil {
+			if fi, err := os.Stat(abs); err == nil && !fi.IsDir() {
+				return abs
+			}
 		}
 	}
 	if p, err := exec.LookPath("wine"); err == nil {
@@ -144,6 +166,10 @@ func (m *Manager) wineEnv() []string {
 	}
 	env = append(env,
 		"WINEPREFIX="+m.winePrefix,
+		"WINEARCH=win64",
+		"WINEDLLOVERRIDES=mscoree,mshtml=",
+		"WINELOADER="+m.wineBin,
+		"WINESERVER="+filepath.Join(wineDir, "wineserver"),
 		"WINEDEBUG=-all",
 		"DISPLAY=",
 		"MVK_CONFIG_LOG_LEVEL=0",
