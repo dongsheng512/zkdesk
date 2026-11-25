@@ -21,12 +21,21 @@
 5. **操作审计与诊断日志**
    - 持久化记录所有同步、写入、校时、删除、拉取与清理历史；Worker 异常输出自动滚动写入 `~/Library/Application Support/zk_mac/logs/worker.log`。
 
-## 运行与构建前提
+## 直接安装（推荐普通用户）
+
+1. 前往本仓库 [Releases](https://github.com/dongsheng512/zkdesk/releases) 下载最新 `ZKDesk-*-macos-*.zip` 并解压，将 `ZKDesk.app` 拖入「应用程序」文件夹。
+2. 安装并首次放行 **Wine Stable**（`/Applications/Wine Stable.app` 或 `brew install --cask --no-quarantine wine-stable`；Apple Silicon 需已安装 Rosetta 2）。
+3. 因安装包使用本地 ad-hoc 签名，首次打开如遇 macOS 提示“无法验证开发者”，可执行一次放行命令后再打开：
+   ```bash
+   xattr -dr com.apple.quarantine /Applications/ZKDesk.app
+   ```
+
+## 从源码构建前提
 
 - macOS 12+（Apple Silicon 需已安装 Rosetta 2）
 - 已安装并放行 **Wine Stable**（`/Applications/Wine Stable.app` 或 `/opt/homebrew/bin/wine`）
 - Go 1.24+、Node.js 20+、[Wails v3 CLI](https://v3alpha.wails.io/)
-- 中控官方 64 位 SDK DLL：按 [runtime/sdk_x64/README.md](runtime/sdk_x64/README.md) 说明将 `zkemkeeper.dll` 及配套 64 位 DLL 放入 `runtime/sdk_x64/`
+- 中控 64 位 SDK DLL 已预置于 [runtime/sdk_x64/](runtime/sdk_x64/README.md)，克隆后可直接构建打包
 
 ## 开发、测试与打包
 
